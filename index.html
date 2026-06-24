@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ous Bayaa — QA Engineer</title>
+  <meta name="description" content="Ous Bayaa — QA Engineer specializing in mobile, web, and LLM testing. Former catastrophe claims adjuster. Based in Santa Monica, CA." />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind (Play CDN — zero build, single file) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            paper:   'var(--paper)',
+            surface: 'var(--surface)',
+            ink:     'var(--ink)',
+            muted:   'var(--muted)',
+            line:    'var(--line)',
+            accent:  'var(--accent)',
+            gold:    'var(--gold)',
+          },
+          fontFamily: {
+            display: ['Fraunces', 'Georgia', 'serif'],
+            body:    ['Newsreader', 'Georgia', 'serif'],
+            mono:    ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+          },
+          maxWidth: { content: '72rem' },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    /* ---- Theme tokens: warm dossier palette ---- */
+    :root {
+      --paper:   #f5efe4;  /* warm ivory page */
+      --surface: #fbf7ef;  /* cards / raised */
+      --ink:     #211e18;  /* warm near-black text */
+      --muted:   #635b4e;  /* secondary text (AA on paper) */
+      --line:    #ddd2c1;  /* hairlines */
+      --accent:  #7c2d2a;  /* oxblood */
+      --gold:    #8a5e12;  /* ochre (darkened for AA) */
+      --shadow:  18px 18px 0 rgba(33,30,24,.06);
+      color-scheme: light;
+    }
+    .dark {
+      --paper:   #16130e;
+      --surface: #201b14;
+      --ink:     #efe7d8;
+      --muted:   #ab9f8c;
+      --line:    #342d22;
+      --accent:  #df8c80;  /* lightened oxblood for dark contrast */
+      --gold:    #d6a94e;
+      --shadow:  18px 18px 0 rgba(0,0,0,.30);
+      color-scheme: dark;
+    }
+
+    body { background: var(--paper); color: var(--ink); transition: background-color .4s ease, color .4s ease; }
+
+    /* Editorial paper grain (decorative, very subtle) */
+    body::before {
+      content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .5;
+      background-image: radial-gradient(var(--line) 0.5px, transparent 0.5px);
+      background-size: 22px 22px;
+      mask-image: radial-gradient(circle at 50% 0%, #000 0%, transparent 70%);
+    }
+
+    /* Focus visibility — part of the accessibility floor */
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+
+    /* Reveal-on-scroll */
+    .reveal { opacity: 0; transform: translateY(22px); transition: opacity .7s ease, transform .7s ease; }
+    .reveal.in { opacity: 1; transform: none; }
+
+    /* Project card tilt + lift */
+    .tilt { transform-style: preserve-3d; transition: transform .35s cubic-bezier(.2,.7,.2,1), box-shadow .35s ease; will-change: transform; }
+    .tilt:hover { box-shadow: var(--shadow); }
+    .card-cta { opacity: .55; transform: translateY(2px); transition: opacity .3s ease, transform .3s ease, gap .3s ease; }
+    .group:hover .card-cta, .group:focus-within .card-cta { opacity: 1; transform: translateY(0); }
+
+    /* Form micro-interactions */
+    .field.valid input, .field.valid textarea { border-color: #3f8f5a; box-shadow: 0 0 0 3px rgba(63,143,90,.18); }
+    .dark .field.valid input, .dark .field.valid textarea { border-color: #6fc78c; box-shadow: 0 0 0 3px rgba(111,199,140,.20); }
+    .field.invalid input, .field.invalid textarea { border-color: var(--accent); }
+    .field.invalid { animation: shake .4s ease; }
+    @keyframes shake {
+      10%,90% { transform: translateX(-1px); }
+      20%,80% { transform: translateX(2px); }
+      30%,50%,70% { transform: translateX(-4px); }
+      40%,60% { transform: translateX(4px); }
+    }
+    .err-msg { max-height: 0; overflow: hidden; opacity: 0; transition: max-height .3s ease, opacity .3s ease, margin .3s ease; }
+    .field.invalid .err-msg { max-height: 2.5rem; opacity: 1; margin-top: .4rem; }
+
+    /* Filter chips */
+    .chip[aria-pressed="true"] { background: var(--accent); color: var(--paper); border-color: var(--accent); }
+
+    /* Verified stamp flourish */
+    .stamp { border: 1.5px solid var(--gold); color: var(--gold); }
+
+    /* Respect reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      .reveal { opacity: 1 !important; transform: none !important; transition: none; }
+      .tilt { transition: box-shadow .2s ease; }
+      .field.invalid { animation: none; }
+      html { scroll-behavior: auto; }
+      * { animation-duration: .001ms !important; transition-duration: .12s !important; }
+    }
+  </style>
+</head>
+
+<body class="font-body antialiased relative">
+  <!-- Skip link (accessibility) -->
+  <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-3 focus:left-3 focus:bg-accent focus:text-paper focus:px-4 focus:py-2 focus:rounded font-mono text-sm">Skip to content</a>
+
+  <!-- ============ NAV ============ -->
+  <header class="sticky top-0 z-40 border-b border-line bg-paper/85 backdrop-blur-md">
+    <nav aria-label="Primary" class="max-w-content mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
+      <a href="#main" class="font-display font-semibold text-xl tracking-tight flex items-center gap-2">
+        <span aria-hidden="true" class="inline-grid place-items-center w-7 h-7 rounded-full border border-ink font-mono text-[11px] leading-none">OB</span>
+        <span class="hidden sm:inline">Ous Bayaa</span>
+      </a>
+
+      <div class="hidden md:flex items-center gap-7 font-mono text-[13px] tracking-wide">
+        <a href="#work" class="hover:text-accent transition-colors">Work</a>
+        <a href="#about" class="hover:text-accent transition-colors">About</a>
+        <a href="#experience" class="hover:text-accent transition-colors">Experience</a>
+        <a href="#contact" class="hover:text-accent transition-colors">Contact</a>
+        <button type="button" data-resume-open class="px-3 py-1.5 border border-ink rounded-full hover:bg-ink hover:text-paper transition-colors">Résumé</button>
+      </div>
+
+      <div class="flex items-center gap-1.5">
+        <button id="theme-toggle" type="button" aria-label="Switch to dark mode" aria-pressed="false"
+          class="w-10 h-10 grid place-items-center rounded-full border border-line hover:border-ink transition-colors">
+          <svg class="theme-sun w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+          <svg class="theme-moon w-5 h-5 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        </button>
+        <button id="nav-toggle" type="button" class="md:hidden w-10 h-10 grid place-items-center rounded-full border border-line" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Mobile menu -->
+    <div id="mobile-menu" class="md:hidden hidden border-t border-line bg-paper">
+      <div class="px-5 py-4 flex flex-col gap-1 font-mono text-sm">
+        <a href="#work" class="py-2.5 border-b border-line/60">Work</a>
+        <a href="#about" class="py-2.5 border-b border-line/60">About</a>
+        <a href="#experience" class="py-2.5 border-b border-line/60">Experience</a>
+        <a href="#contact" class="py-2.5 border-b border-line/60">Contact</a>
+        <button type="button" data-resume-open class="py-2.5 text-left">Résumé ↓</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="relative z-10">
+
+    <!-- ============ HERO ============ -->
+    <section class="max-w-content mx-auto px-5 sm:px-8 pt-16 sm:pt-24 pb-16">
+      <p class="font-mono text-[12px] sm:text-[13px] tracking-[0.18em] text-muted reveal">
+        CASE FILE · QA-2026 &nbsp;/&nbsp; SANTA MONICA, CA
+      </p>
+
+      <h1 class="reveal mt-6 font-display font-semibold leading-[0.98] tracking-tight text-[clamp(2.6rem,8vw,5.6rem)]">
+        I find what's broken<span class="text-accent">.</span><br />
+        And I prove it<span class="text-accent">.</span>
+      </h1>
+
+      <div class="reveal mt-8 grid md:grid-cols-[1.4fr_1fr] gap-8 md:gap-12 items-end">
+        <p class="font-body text-lg sm:text-xl leading-relaxed text-ink/90 max-w-2xl">
+          QA Engineer with a diverse background testing web, mobile, and LLM powered applications. Prior to software, 
+          I spent six years managing catastrophe insurance claims; a role that required rigorous evidence investigation, 
+          risk assessment, and decisive action under pressure. I bring that same analytical instinct to tech, building
+           thorough test plans that ensure stable releases.
+        </p>
+
+        <!-- Verification ledger (signature, not a generic stat block) -->
+        <dl class="font-mono text-[13px] border-t border-line pt-4 space-y-2.5">
+          <div class="flex items-baseline justify-between gap-4">
+            <dt class="text-muted">Critical bugs caught</dt>
+            <dd class="font-display text-2xl font-semibold counter" data-target="50" data-suffix="+">0</dd>
+          </div>
+          <div class="flex items-baseline justify-between gap-4">
+            <dt class="text-muted">Fewer crashes</dt>
+            <dd class="font-display text-2xl font-semibold counter" data-target="30" data-suffix="%">0</dd>
+          </div>
+          <div class="flex items-baseline justify-between gap-4">
+            <dt class="text-muted">Faster claims</dt>
+            <dd class="font-display text-2xl font-semibold counter" data-target="30" data-suffix="%">0</dd>
+          </div>
+        </dl>
+      </div>
+
+      <div class="reveal mt-10 flex flex-wrap items-center gap-3">
+        <a href="#work" class="inline-flex items-center gap-2 bg-accent text-paper font-mono text-sm px-5 py-3 rounded-full hover:opacity-90 transition-opacity">
+          View my work
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+        <!-- Direct download of the real PDF -->
+        <a href="resume.pdf" download class="inline-flex items-center gap-2 border border-ink font-mono text-sm px-5 py-3 rounded-full hover:bg-ink hover:text-paper transition-colors">
+          Download résumé
+        </a>
+
+        <span class="mx-1 h-5 w-px bg-line hidden sm:block" aria-hidden="true"></span>
+
+        <!-- TODO: replace placeholder profile URLs -->
+        <a href="https://linkedin.com/in/ousbayaa" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn profile (opens in new tab)" class="w-10 h-10 grid place-items-center rounded-full border border-line hover:border-ink transition-colors">
+          <svg class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4.98 3.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM3 9h4v12H3zM9 9h3.8v1.7h.05c.53-1 1.83-2.05 3.76-2.05C20.4 8.65 22 10.9 22 14.4V21h-4v-5.8c0-1.4 0-3.2-2-3.2s-2.3 1.5-2.3 3.1V21H9z"/></svg>
+        </a>
+        <a href="https://github.com/ousbayaa" target="_blank" rel="noopener noreferrer" aria-label="GitHub profile (opens in new tab)" class="w-10 h-10 grid place-items-center rounded-full border border-line hover:border-ink transition-colors">
+          <svg class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.58 2 12.25c0 4.53 2.87 8.37 6.84 9.73.5.1.68-.22.68-.49v-1.7c-2.78.62-3.37-1.2-3.37-1.2-.46-1.18-1.11-1.5-1.11-1.5-.9-.64.07-.62.07-.62 1 .07 1.53 1.05 1.53 1.05.9 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.36-2.22-.26-4.56-1.14-4.56-5.05 0-1.12.39-2.03 1.03-2.74-.1-.26-.45-1.3.1-2.72 0 0 .84-.27 2.75 1.05a9.4 9.4 0 0 1 5 0c1.91-1.32 2.75-1.05 2.75-1.05.55 1.42.2 2.46.1 2.72.64.71 1.03 1.62 1.03 2.74 0 3.92-2.35 4.78-4.58 5.04.36.32.68.94.68 1.9v2.82c0 .27.18.6.69.49A10.02 10.02 0 0 0 22 12.25C22 6.58 17.52 2 12 2z"/></svg>
+        </a>
+        <a href="mailto:ousbayaa@icloud.com" aria-label="Email Ous" class="w-10 h-10 grid place-items-center rounded-full border border-line hover:border-ink transition-colors">
+          <svg class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+        </a>
+      </div>
+    </section>
+
+    <!-- ============ MARQUEE RULE ============ -->
+    <div class="border-y border-line overflow-hidden">
+      <div class="max-w-content mx-auto px-5 sm:px-8 py-3 font-mono text-[12px] tracking-[0.2em] text-muted flex flex-wrap gap-x-6 gap-y-1">
+        <span>PYTHON · PYTEST</span><span aria-hidden="true">·</span>
+        <span>MOBILE &amp; WEB QA</span><span aria-hidden="true">·</span>
+        <span>RISK-BASED TEST DESIGN</span><span aria-hidden="true">·</span>
+        <span>JIRA / LINEAR</span><span aria-hidden="true">·</span>
+        <span>FULL-STACK JS</span>
+      </div>
+    </div>
+
+    <!-- ============ ABOUT ============ -->
+    <section id="about" class="max-w-content mx-auto px-5 sm:px-8 py-20 sm:py-28 scroll-mt-20">
+      <p class="reveal font-mono text-[12px] tracking-[0.18em] text-accent">01 — THE INVESTIGATOR</p>
+      <div class="mt-6 grid md:grid-cols-[1fr_320px] gap-10 md:gap-16">
+        <div class="reveal">
+          <h2 class="font-display text-3xl sm:text-4xl font-semibold leading-tight">From claims files to test plans</h2>
+          <div class="mt-6 space-y-5 text-lg leading-relaxed text-ink/90">
+            <p>
+              <span class="float-left font-display text-6xl leading-[0.7] pr-3 pt-1 text-accent">I</span>
+              spent over six years as a catastrophe claims adjuster, hurricanes, fires, hailstorms, and tornadoes. Investigating evidence and assessing
+               risk in catastrophe insurance taught me how to spot flaws under pressure. It rewired my brain, and when I decided to shift into software, 
+               that mindset came with me.
+            </p>
+            <p>
+              Now at TalkTastic, I test our LLM app across every platform, from Mac and iPad to Pixel and Samsung. I focus on making sure prompts hit the
+               mark, transcriptions are flawless, and regressions don't make it out the door. There’s nothing more satisfying than breaking something before 
+               a customer sees it, then giving the dev team the exact roadmap to fix it.
+            </p>
+            <p>
+              I'm happiest when I can prove something is broken before a customer ever sees it, then hand engineering a
+              report clear enough to fix it once.
+            </p>
+          </div>
+        </div>
+
+        <!-- Marginalia card -->
+        <aside class="reveal self-start bg-surface border border-line rounded-xl p-6 font-mono text-[13px] leading-relaxed">
+          <p class="text-accent mb-3">// field notes</p>
+          <ul class="space-y-3 text-muted">
+            <li><span class="text-ink">Based:</span> Santa Monica, CA</li>
+            <li><span class="text-ink">Focus:</span> mobile · web · LLM testing</li>
+            <li><span class="text-ink">Prior life:</span> CAT claims adjuster</li>
+            <li><span class="text-ink">Edu:</span> B.S. Software Engineering — Bloom Institute of Technology</li>
+          </ul>
+          <p class="mt-5 inline-flex items-center gap-2 stamp rounded px-2.5 py-1 text-[11px] tracking-wide">✓ AVAILABLE FOR HIRE</p>
+        </aside>
+      </div>
+
+      <!-- Skills ledger -->
+      <div class="reveal mt-16 grid sm:grid-cols-3 gap-8 border-t border-line pt-10">
+        <div>
+          <h3 class="font-mono text-[12px] tracking-[0.16em] text-muted mb-4">TESTING &amp; QA</h3>
+          <ul class="space-y-1.5 text-[17px]">
+            <li>Manual &amp; automated testing</li><li>Pytest automation</li><li>Test planning &amp; execution</li>
+            <li>Risk-based test design</li><li>Regression prevention</li><li>Defect tracking</li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="font-mono text-[12px] tracking-[0.16em] text-muted mb-4">LANGUAGES</h3>
+          <ul class="space-y-1.5 text-[17px]">
+            <li>Python</li><li>SQL</li><li>JavaScript</li><li>HTML</li><li>CSS</li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="font-mono text-[12px] tracking-[0.16em] text-muted mb-4">TOOLS &amp; STACK</h3>
+          <ul class="space-y-1.5 text-[17px]">
+            <li>React · Node.js</li><li>PostgreSQL</li><li>Jira · Linear</li><li>Git · Linux</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ WORK / PROJECTS ============ -->
+    <section id="work" class="border-t border-line bg-surface/40 scroll-mt-20">
+      <div class="max-w-content mx-auto px-5 sm:px-8 py-20 sm:py-28">
+        <div class="reveal flex flex-wrap items-end justify-between gap-6">
+          <div>
+            <p class="font-mono text-[12px] tracking-[0.18em] text-accent">02 — SELECTED WORK</p>
+            <h2 class="mt-3 font-display text-3xl sm:text-4xl font-semibold">The casework</h2>
+          </div>
+          <!-- Filters -->
+          <div role="group" aria-label="Filter projects by category" class="flex flex-wrap gap-2 font-mono text-[13px]">
+            <button class="chip px-4 py-2 rounded-full border border-line transition-colors" data-filter="all" aria-pressed="true">All</button>
+            <button class="chip px-4 py-2 rounded-full border border-line transition-colors" data-filter="qa" aria-pressed="false">QA &amp; Testing</button>
+            <button class="chip px-4 py-2 rounded-full border border-line transition-colors" data-filter="web" aria-pressed="false">Web Dev</button>
+            <button class="chip px-4 py-2 rounded-full border border-line transition-colors" data-filter="insurance" aria-pressed="false">Insurance</button>
+          </div>
+        </div>
+
+        <p id="filter-status" class="sr-only" role="status" aria-live="polite"></p>
+
+        <!-- Grid (rendered by JS from the editable PROJECTS array below) -->
+        <div id="project-grid" class="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-5" style="perspective: 1000px;"></div>
+      </div>
+    </section>
+
+    <!-- ============ EXPERIENCE ============ -->
+    <section id="experience" class="max-w-content mx-auto px-5 sm:px-8 py-20 sm:py-28 scroll-mt-20">
+      <p class="reveal font-mono text-[12px] tracking-[0.18em] text-accent">03 — THE RECORD</p>
+      <h2 class="reveal mt-3 font-display text-3xl sm:text-4xl font-semibold">Experience &amp; education</h2>
+
+      <ol class="mt-12 relative border-l border-line ml-2 sm:ml-3">
+        <li class="reveal relative pl-8 sm:pl-10 pb-12">
+          <span class="absolute -left-[7px] top-1.5 w-3 h-3 rounded-full bg-accent" aria-hidden="true"></span>
+          <p class="font-mono text-[12px] tracking-wide text-muted">FEB 2020 — PRESENT</p>
+          <h3 class="font-display text-2xl font-semibold mt-1">Quality Assurance Engineer</h3>
+          <p class="font-mono text-[13px] text-accent mt-0.5">TalkTastic · Santa Monica, CA</p>
+          <ul class="mt-3 space-y-1.5 text-ink/90 leading-relaxed list-disc pl-5 marker:text-line">
+            <li>Run manual and Pytest-automated suites to verify behavior and improve prompt/response accuracy of the app's LLM.</li>
+            <li>Test across iPhone, iPad, Mac, Pixel, and Galaxy; surfaced 50+ critical bugs, including transcription defects.</li>
+            <li>Build test plans aligned to functional and technical intent, preventing regressions and high-impact escapes.</li>
+            <li>Drove a 30% reduction in system crashes via tight defect tracking in Jira and Linear.</li>
+          </ul>
+        </li>
+        <li class="reveal relative pl-8 sm:pl-10 pb-12">
+          <span class="absolute -left-[7px] top-1.5 w-3 h-3 rounded-full bg-gold" aria-hidden="true"></span>
+          <p class="font-mono text-[12px] tracking-wide text-muted">JAN 2016 — DEC 2019</p>
+          <h3 class="font-display text-2xl font-semibold mt-1">Claims Adjuster</h3>
+          <p class="font-mono text-[13px] text-accent mt-0.5">State Farm · Remote</p>
+          <ul class="mt-3 space-y-1.5 text-ink/90 leading-relaxed list-disc pl-5 marker:text-line">
+            <li>Licensed contractor specializing in catastrophes — hurricanes, tornadoes, fires — reviewing documentation and ruling on claim validity.</li>
+            <li>Cut average total loss auto claim processing time by 30% by improving the assessment process.</li>
+            <li>Coordinated with underwriters, appraisers, and legal to resolve complex claims within policy and regulatory standards.</li>
+            <li>Worked across carriers including State Farm, Progressive, AAA, and Lemonade.</li>
+          </ul>
+        </li>
+        <li class="reveal relative pl-8 sm:pl-10">
+          <span class="absolute -left-[7px] top-1.5 w-3 h-3 rounded-full bg-ink" aria-hidden="true"></span>
+          <p class="font-mono text-[12px] tracking-wide text-muted">EDUCATION</p>
+          <h3 class="font-display text-2xl font-semibold mt-1">B.S., Software Engineering</h3>
+          <p class="font-mono text-[13px] text-accent mt-0.5">Bloom Institute of Technology · Full-Stack Web Development</p>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ============ CONTACT ============ -->
+    <section id="contact" class="border-t border-line bg-surface/40 scroll-mt-20">
+      <div class="max-w-content mx-auto px-5 sm:px-8 py-20 sm:py-28">
+        <div class="grid md:grid-cols-[1fr_1.1fr] gap-12 md:gap-16">
+          <div class="reveal">
+            <p class="font-mono text-[12px] tracking-[0.18em] text-accent">04 — OPEN THE FILE</p>
+            <h2 class="mt-3 font-display text-3xl sm:text-5xl font-semibold leading-tight">Let's talk quality.</h2>
+            <p class="mt-5 text-lg leading-relaxed text-ink/90 max-w-md">
+              Hiring for QA, SDET, or test engineering? I'm in Santa Monica and open to remote.
+              Send a note, or grab my email below.
+            </p>
+
+            <!-- Copy email -->
+            <div class="mt-8 inline-flex items-stretch border border-line rounded-full overflow-hidden bg-paper">
+              <span class="px-5 py-3 font-mono text-sm self-center select-all">ousbayaa@icloud.com</span>
+              <button id="copy-email" type="button" data-email="ousbayaa@icloud.com"
+                class="px-5 py-3 bg-ink text-paper font-mono text-sm hover:bg-accent transition-colors flex items-center gap-2"
+                aria-label="Copy email address to clipboard">
+                <svg class="copy-ic w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+                <span class="copy-label">Copy</span>
+              </button>
+            </div>
+            <p id="copy-status" class="sr-only" role="status" aria-live="polite"></p>
+          </div>
+
+          <!-- Form (validation handled in JS; no native <form> submit) -->
+          <div class="reveal bg-paper border border-line rounded-2xl p-6 sm:p-8">
+            <div class="space-y-5" id="contact-form" novalidate>
+              <div class="field" data-validate="text">
+                <label for="f-name" class="font-mono text-[12px] tracking-wide text-muted">NAME</label>
+                <input id="f-name" name="name" type="text" autocomplete="name" required aria-required="true" aria-describedby="e-name"
+                  class="mt-1.5 w-full bg-transparent border border-line rounded-lg px-4 py-3 outline-none transition-shadow" />
+                <p id="e-name" class="err-msg font-mono text-[12px] text-accent">Add your name so I know who's writing.</p>
+              </div>
+
+              <div class="field" data-validate="email">
+                <label for="f-email" class="font-mono text-[12px] tracking-wide text-muted">EMAIL</label>
+                <input id="f-email" name="email" type="email" autocomplete="email" required aria-required="true" aria-describedby="e-email"
+                  class="mt-1.5 w-full bg-transparent border border-line rounded-lg px-4 py-3 outline-none transition-shadow" />
+                <p id="e-email" class="err-msg font-mono text-[12px] text-accent">That email doesn't look right — check the format.</p>
+              </div>
+
+              <div class="field" data-validate="text">
+                <label for="f-msg" class="font-mono text-[12px] tracking-wide text-muted">MESSAGE</label>
+                <textarea id="f-msg" name="message" rows="4" required aria-required="true" aria-describedby="e-msg"
+                  class="mt-1.5 w-full bg-transparent border border-line rounded-lg px-4 py-3 outline-none transition-shadow resize-y"></textarea>
+                <p id="e-msg" class="err-msg font-mono text-[12px] text-accent">Tell me a little about the role.</p>
+              </div>
+
+              <button id="form-submit" type="button"
+                class="w-full bg-accent text-paper font-mono text-sm py-3.5 rounded-full hover:opacity-90 transition-opacity">
+                Send message
+              </button>
+              <p id="form-result" class="font-mono text-[13px] text-center hidden" role="status" aria-live="polite"></p>
+            </div>
+            <p class="mt-4 font-mono text-[11px] text-muted leading-relaxed">
+              <!-- TODO: wire to Formspree / Web3Forms / your backend. Currently validates only. -->
+              Note: connect this to your form handler before going live.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="border-t border-line">
+    <div class="max-w-content mx-auto px-5 sm:px-8 py-10 flex flex-col sm:flex-row gap-4 items-center justify-between font-mono text-[12px] text-muted">
+      <p>© <span id="year"></span> Ous Bayaa · Santa Monica, CA</p>
+      <div class="flex items-center gap-5">
+        <a href="https://linkedin.com/in/ousbayaa" target="_blank" rel="noopener noreferrer" class="hover:text-accent transition-colors">LinkedIn</a>
+        <a href="https://github.com/ousbayaa" target="_blank" rel="noopener noreferrer" class="hover:text-accent transition-colors">GitHub</a>
+        <a href="mailto:ousbayaa@icloud.com" class="hover:text-accent transition-colors">Email</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ============ PROJECT MODAL ============ -->
+  <div id="modal" class="fixed inset-0 z-50 hidden" aria-hidden="true">
+    <div class="modal-backdrop absolute inset-0 bg-ink/50 backdrop-blur-sm"></div>
+    <div role="dialog" aria-modal="true" aria-labelledby="modal-title"
+      class="relative z-10 max-w-lg mx-auto mt-[12vh] bg-paper border border-line rounded-2xl p-7 sm:p-8 shadow-2xl">
+      <button id="modal-close" type="button" aria-label="Close details"
+        class="absolute top-4 right-4 w-9 h-9 grid place-items-center rounded-full border border-line hover:border-ink transition-colors">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <p id="modal-cat" class="font-mono text-[12px] tracking-wide text-accent"></p>
+      <h3 id="modal-title" class="font-display text-2xl font-semibold mt-2"></h3>
+      <p id="modal-body" class="mt-4 leading-relaxed text-ink/90"></p>
+      <ul id="modal-tags" class="mt-5 flex flex-wrap gap-2 font-mono text-[11px]"></ul>
+    </div>
+  </div>
+
+  <!-- ============ RÉSUMÉ MODAL (card) ============ -->
+  <div id="resume-modal" class="fixed inset-0 z-50 hidden" aria-hidden="true">
+    <div class="modal-backdrop absolute inset-0 bg-ink/50 backdrop-blur-sm"></div>
+    <div class="relative z-10 h-full overflow-y-auto py-[6vh] px-4">
+      <div role="dialog" aria-modal="true" aria-labelledby="resume-name"
+        class="max-w-2xl mx-auto bg-paper border border-line rounded-2xl shadow-2xl overflow-hidden">
+
+        <!-- Card header / masthead -->
+        <div class="relative border-b border-line px-7 sm:px-9 pt-8 pb-6">
+          <button id="resume-close" type="button" aria-label="Close résumé"
+            class="absolute top-4 right-4 w-9 h-9 grid place-items-center rounded-full border border-line hover:border-ink transition-colors">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+          <p class="font-mono text-[11px] tracking-[0.18em] text-accent">My Resume  · 2026</p>
+          <h2 id="resume-name" class="font-display text-3xl sm:text-4xl font-semibold mt-2">Ous Bayaa</h2>
+          <p class="font-mono text-[12px] text-muted mt-2 flex flex-wrap gap-x-4 gap-y-1">
+            <span>QA Engineer</span>
+            <a href="mailto:ousbayaa@icloud.com" class="hover:text-accent">ousbayaa@icloud.com</a>
+            <a href="tel:+13109203934" class="hover:text-accent">(310) 920-3934</a>
+            <span>Santa Monica, CA</span>
+          </p>
+          <a href="resume.pdf" download
+            class="mt-5 inline-flex items-center gap-2 bg-accent text-paper font-mono text-[13px] px-4 py-2.5 rounded-full hover:opacity-90 transition-opacity">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
+            Download PDF
+          </a>
+        </div>
+
+        <!-- Card body -->
+        <div class="px-7 sm:px-9 py-7 space-y-7 text-[15px] leading-relaxed">
+
+          <section>
+            <h3 class="font-mono text-[11px] tracking-[0.16em] text-muted mb-2">SUMMARY</h3>
+            <p class="text-ink/90">
+              Experienced IT professional and Software Quality Engineer with a strong background in mobile device
+              testing (Android, iOS/iPadOS, macOS). I collaborate across large functional teams to identify and
+              resolve quality issues, develop and execute test plans, and turn business and technical requirements
+              into automated tests.
+            </p>
+          </section>
+
+          <section>
+            <h3 class="font-mono text-[11px] tracking-[0.16em] text-muted mb-2">SKILLS</h3>
+            <dl class="grid sm:grid-cols-[120px_1fr] gap-x-4 gap-y-2">
+              <dt class="font-mono text-[12px] text-accent">Core</dt>
+              <dd class="text-ink/90">Manual &amp; automated testing · test planning &amp; execution · web &amp; mobile app testing · risk assessment &amp; mitigation</dd>
+              <dt class="font-mono text-[12px] text-accent">Stack</dt>
+              <dd class="text-ink/90">Python (Pytest) · SQL · HTML · CSS · JavaScript · React · Node.js · Jira / Linear · PostgreSQL · Linux</dd>
+            </dl>
+          </section>
+
+          <section>
+            <h3 class="font-mono text-[11px] tracking-[0.16em] text-muted mb-3">EXPERIENCE</h3>
+
+            <div class="mb-5">
+              <div class="flex flex-wrap items-baseline justify-between gap-2">
+                <h4 class="font-display text-lg font-semibold">Quality Assurance Engineer</h4>
+                <span class="font-mono text-[12px] text-muted">Feb 2020 — Present</span>
+              </div>
+              <p class="font-mono text-[12px] text-accent">TalkTastic · Santa Monica, CA</p>
+              <ul class="mt-2 space-y-1 list-disc pl-5 marker:text-line text-ink/90">
+                <li>Run manual and Pytest-automated tests to verify behavior and improve LLM prompt/response accuracy.</li>
+                <li>Tested across iPhone, iPad, Mac, Pixel, and Galaxy; identified 50+ critical bugs.</li>
+                <li>Built test plans that prevent regressions and high-impact escapes.</li>
+                <li>Tracked defects in Jira and Linear, driving a 30% reduction in system crashes.</li>
+              </ul>
+            </div>
+
+            <div>
+              <div class="flex flex-wrap items-baseline justify-between gap-2">
+                <h4 class="font-display text-lg font-semibold">Claims Adjuster</h4>
+                <span class="font-mono text-[12px] text-muted">Jan 2016 — Dec 2019</span>
+              </div>
+              <p class="font-mono text-[12px] text-accent">State Farm · Remote</p>
+              <ul class="mt-2 space-y-1 list-disc pl-5 marker:text-line text-ink/90">
+                <li>Licensed contractor specializing in catastrophes (hurricanes, tornadoes, fires); reviewed documentation and ruled on claim validity.</li>
+                <li>Cut average total loss auto claim processing time by 30%.</li>
+                <li>Coordinated with underwriters, appraisers, and legal to resolve complex claims within policy and regulatory standards.</li>
+                <li>Worked across carriers including State Farm, Progressive, AAA, and Lemonade.</li>
+              </ul>
+            </div>
+          </section>
+
+          <section>
+            <h3 class="font-mono text-[11px] tracking-[0.16em] text-muted mb-2">EDUCATION</h3>
+            <div class="flex flex-wrap items-baseline justify-between gap-2">
+              <h4 class="font-display text-lg font-semibold">B.S., Software Engineering</h4>
+            </div>
+            <p class="font-mono text-[12px] text-accent">Bloom Institute of Technology · Full-Stack Web Development</p>
+          </section>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    'use strict';
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    /* ---------- Year ---------- */
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    /* ---------- Theme toggle (persisted, with safe fallback) ---------- */
+    const root = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const sun = toggle.querySelector('.theme-sun');
+    const moon = toggle.querySelector('.theme-moon');
+    let store = null;
+    try { store = window.localStorage; } catch (e) { store = null; }
+
+    function getInitialTheme() {
+      try { const t = store && store.getItem('theme'); if (t) return t; } catch (e) {}
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    function applyTheme(mode) {
+      const dark = mode === 'dark';
+      root.classList.toggle('dark', dark);
+      sun.classList.toggle('hidden', dark);
+      moon.classList.toggle('hidden', !dark);
+      toggle.setAttribute('aria-pressed', String(dark));
+      toggle.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+      try { store && store.setItem('theme', mode); } catch (e) {}
+    }
+    applyTheme(getInitialTheme());
+    toggle.addEventListener('click', () => applyTheme(root.classList.contains('dark') ? 'light' : 'dark'));
+
+    /* ---------- Mobile menu ---------- */
+    const navToggle = document.getElementById('nav-toggle');
+    const menu = document.getElementById('mobile-menu');
+    navToggle.addEventListener('click', () => {
+      const open = menu.classList.toggle('hidden') === false;
+      navToggle.setAttribute('aria-expanded', String(open));
+      navToggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    });
+    menu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+      menu.classList.add('hidden');
+      navToggle.setAttribute('aria-expanded', 'false');
+    }));
+
+    /* ---------- Projects data ---------- */
+    const PROJECTS = [
+      {
+        id: 'talktastic', cat: 'qa', catLabel: 'QA & Testing', type: 'Role',
+        title: 'LLM App Quality Automation',
+        blurb: 'Manual + Pytest suites verifying an LLM-powered app across five device families.',
+        body: 'At TalkTastic I own the quality of a voice/LLM product across iPhone, iPad, Mac, Pixel, and Samsung products. I derive test cases from product requirements, automate the repeatable paths in Pytest, and partner with engineering on prompt/response accuracy and transcription reliability. Outcome: 50+ critical bugs caught pre-release and a 30% drop in system crashes.',
+        tags: ['Pytest', 'Python', 'Jira', 'Linear', 'Mobile QA'], status: 'SHIPPING',
+      },
+      {
+        id: 'cat-claims', cat: 'insurance', catLabel: 'Insurance', type: 'Role',
+        title: 'Catastrophe Claims Investigation',
+        blurb: 'Four years ruling on total loss and CAT claims under deadline pressure.',
+        body: 'As a licensed CAT adjuster I investigated hurricane, fire, and total loss auto claims end to end; gathering evidence, assessing risk, and determining validity within policy and regulatory standards. Improving the assessment process cut average total loss auto processing time by 30%. Carriers included State Farm, Progressive, AAA, and Lemonade.',
+        tags: ['Risk Assessment', 'Investigation', 'Documentation', 'Compliance'], status: 'CLOSED',
+      },
+      {
+        id: 'swift-testing', cat: 'app', catLabel: 'Side Hustling', type: 'Side project',
+        title: 'Task Manager App',
+        blurb: 'An app that tracks your habits, and will actually hold you accountable!',
+        body: 'A habit-building and accountability iOS app that works like a personal coach in your pocket. Built around one principle: start small, stay consistent, grow gradually.',
+        tags: ['Swift'], status: 'IN PROGRESS',
+      },
+      {
+        id: 'portfolio', cat: 'web', catLabel: 'Web Dev', type: 'Side project',
+        title: 'This Portfolio',
+        blurb: 'Hand-built, accessible, and responsive my QA standard applied to my own site.',
+        body: 'I built this single page site from scratch using semantic HTML, Tailwind, and vanilla JS. I made sure it’s fully accessible—meaning it’s keyboard-navigable, handles reduced-motion preferences gracefully, and plays nice with screen readers. Because let’s be honest: a QA engineer’s own site should be the last thing that fails an audit.',
+        tags: ['HTML', 'Tailwind', 'JavaScript', 'A11y'], status: 'LIVE',
+      },
+      {
+        id: 'freelance', cat: 'web', catLabel: 'Web Dev', type: 'Side project',
+        title: 'Freelance Web Builds',
+        blurb: 'Production sites for local small businesses — design, build, deploy.',
+        body: 'EDIT ME — Full-stack websites for small businesses, from design through deployment. Swap in your favorite client project, the stack you used, and a live link or screenshot.',
+        tags: ['Full-Stack', 'React', 'Node.js'], status: 'CLIENT WORK',
+      },
+      {
+        id: 'webapp', cat: 'web', catLabel: 'Web Dev', type: 'Side project',
+        title: 'Your Next Project',
+        blurb: 'A placeholder slot — drop in an app, tool, or experiment here.',
+        body: 'EDIT ME — Add a full-stack app or tool you\u2019ve built. Include the problem it solves, the stack, and a link. Three to six strong cards is the sweet spot.',
+        tags: ['SQL', 'PostgreSQL', 'JavaScript'], status: 'WIP',
+      },
+    ];
+
+    /* ---------- Render project cards ---------- */
+    const grid = document.getElementById('project-grid');
+    const filterStatus = document.getElementById('filter-status');
+
+    function cardHTML(p) {
+      const tags = p.tags.map(t => `<span class="px-2 py-0.5 border border-line rounded">${t}</span>`).join('');
+      return `
+      <article class="group tilt relative bg-paper border border-line rounded-xl p-5 flex flex-col" data-cat="${p.cat}">
+        <div class="flex items-center justify-between gap-3">
+          <span class="font-mono text-[11px] tracking-wide text-muted">${p.type}</span>
+          <span class="font-mono text-[10px] stamp rounded px-2 py-0.5">${p.status}</span>
+        </div>
+        <h3 class="font-display text-xl font-semibold mt-3 leading-snug">${p.title}</h3>
+        <p class="mt-2 text-[15px] leading-relaxed text-ink/85 flex-1">${p.blurb}</p>
+        <ul class="mt-4 flex flex-wrap gap-1.5 font-mono text-[11px] text-muted">${tags}</ul>
+        <button type="button" class="view-btn card-cta mt-4 inline-flex items-center gap-1.5 font-mono text-[13px] text-accent self-start"
+          data-id="${p.id}" aria-label="View details: ${p.title}">
+          View details
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </article>`;
+    }
+
+    function render(filter) {
+      const list = filter === 'all' ? PROJECTS : PROJECTS.filter(p => p.cat === filter);
+      grid.innerHTML = list.map(cardHTML).join('');
+      filterStatus.textContent = `Showing ${list.length} ${list.length === 1 ? 'project' : 'projects'}.`;
+      attachCardBehavior();
+      // reveal newly rendered cards
+      grid.querySelectorAll('.tilt').forEach((el, i) => {
+        el.classList.add('reveal');
+        if (reduceMotion) { el.classList.add('in'); return; }
+        setTimeout(() => el.classList.add('in'), 40 * i);
+      });
+    }
+
+    /* ---------- Filters ---------- */
+    const chips = Array.from(document.querySelectorAll('.chip'));
+    chips.forEach(chip => chip.addEventListener('click', () => {
+      chips.forEach(c => c.setAttribute('aria-pressed', 'false'));
+      chip.setAttribute('aria-pressed', 'true');
+      render(chip.dataset.filter);
+    }));
+
+    /* ---------- Card tilt + modal triggers ---------- */
+    function attachCardBehavior() {
+      grid.querySelectorAll('.tilt').forEach(card => {
+        if (!reduceMotion && window.matchMedia('(pointer:fine)').matches) {
+          card.addEventListener('pointermove', e => {
+            const r = card.getBoundingClientRect();
+            const px = (e.clientX - r.left) / r.width - 0.5;
+            const py = (e.clientY - r.top) / r.height - 0.5;
+            card.style.transform = `translateY(-6px) rotateX(${(-py * 6).toFixed(2)}deg) rotateY(${(px * 6).toFixed(2)}deg)`;
+          });
+          card.addEventListener('pointerleave', () => { card.style.transform = ''; });
+        } else {
+          // touch / reduced motion: simple lift on active
+          card.addEventListener('pointerdown', () => card.style.transform = 'translateY(-4px)');
+          card.addEventListener('pointerup', () => card.style.transform = '');
+        }
+      });
+      grid.querySelectorAll('.view-btn').forEach(btn =>
+        btn.addEventListener('click', () => openModal(btn.dataset.id)));
+    }
+
+    /* ---------- Modal ---------- */
+    const modal = document.getElementById('modal');
+    const mCat = document.getElementById('modal-cat');
+    const mTitle = document.getElementById('modal-title');
+    const mBody = document.getElementById('modal-body');
+    const mTags = document.getElementById('modal-tags');
+    const mClose = document.getElementById('modal-close');
+    let lastFocused = null;
+
+    function openModal(id) {
+      const p = PROJECTS.find(x => x.id === id);
+      if (!p) return;
+      lastFocused = document.activeElement;
+      mCat.textContent = p.catLabel + ' · ' + p.type;
+      mTitle.textContent = p.title;
+      mBody.textContent = p.body;
+      mTags.innerHTML = p.tags.map(t => `<li class="px-2 py-0.5 border border-line rounded text-muted">${t}</li>`).join('');
+      modal.classList.remove('hidden');
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      mClose.focus();
+      document.addEventListener('keydown', onKeydown);
+    }
+    function closeModal() {
+      modal.classList.add('hidden');
+      modal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      document.removeEventListener('keydown', onKeydown);
+      if (lastFocused) lastFocused.focus();
+    }
+    function onKeydown(e) {
+      if (e.key === 'Escape') closeModal();
+      if (e.key === 'Tab') { // trap focus to close button (single focusable)
+        e.preventDefault(); mClose.focus();
+      }
+    }
+    mClose.addEventListener('click', closeModal);
+    modal.querySelector('.modal-backdrop').addEventListener('click', closeModal);
+
+    /* ---------- Copy email ---------- */
+    const copyBtn = document.getElementById('copy-email');
+    const copyLabel = copyBtn.querySelector('.copy-label');
+    const copyStatus = document.getElementById('copy-status');
+    copyBtn.addEventListener('click', async () => {
+      const email = copyBtn.dataset.email;
+      try {
+        await navigator.clipboard.writeText(email);
+      } catch (e) {
+        const t = document.createElement('textarea');
+        t.value = email; document.body.appendChild(t); t.select();
+        try { document.execCommand('copy'); } catch (_) {}
+        document.body.removeChild(t);
+      }
+      copyLabel.textContent = 'Copied!';
+      copyStatus.textContent = 'Email address copied to clipboard.';
+      setTimeout(() => { copyLabel.textContent = 'Copy'; }, 1800);
+    });
+
+    /* ---------- Form validation ---------- */
+    const fields = Array.from(document.querySelectorAll('#contact-form .field'));
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    function validateField(field) {
+      const input = field.querySelector('input, textarea');
+      const type = field.dataset.validate;
+      const val = input.value.trim();
+      let ok = val.length > 0;
+      if (type === 'email') ok = emailRe.test(val);
+      if (type === 'text' && input.tagName === 'TEXTAREA') ok = val.length >= 4;
+      field.classList.toggle('valid', ok);
+      field.classList.toggle('invalid', !ok && val.length > 0);
+      input.setAttribute('aria-invalid', String(!ok));
+      return ok;
+    }
+    fields.forEach(field => {
+      const input = field.querySelector('input, textarea');
+      input.addEventListener('input', () => {
+        // clear shake while typing, re-validate gently
+        const val = input.value.trim();
+        if (val.length === 0) { field.classList.remove('valid', 'invalid'); input.setAttribute('aria-invalid', 'false'); return; }
+        validateField(field);
+      });
+      input.addEventListener('blur', () => { if (input.value.trim()) validateField(field); });
+    });
+
+    document.getElementById('form-submit').addEventListener('click', () => {
+      let allOk = true;
+      fields.forEach(field => {
+        const ok = validateField(field);
+        if (!ok) { field.classList.add('invalid'); allOk = false; }
+      });
+      const result = document.getElementById('form-result');
+      result.classList.remove('hidden');
+      if (allOk) {
+        result.textContent = '✓ Looks good — connect a form handler to actually send.';
+        result.style.color = 'var(--gold)';
+      } else {
+        result.textContent = 'Please fix the highlighted fields.';
+        result.style.color = 'var(--accent)';
+        const firstBad = fields.find(f => f.classList.contains('invalid'));
+        if (firstBad) firstBad.querySelector('input, textarea').focus();
+      }
+    });
+
+    /* ---------- Scroll reveal + stat counters ---------- */
+    const revealObserver = new IntersectionObserver((entries, obs) => {
+      entries.forEach(en => { if (en.isIntersecting) { en.target.classList.add('in'); obs.unobserve(en.target); } });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach(el => {
+      if (reduceMotion) el.classList.add('in'); else revealObserver.observe(el);
+    });
+
+    const counters = document.querySelectorAll('.counter');
+    const countObserver = new IntersectionObserver((entries, obs) => {
+      entries.forEach(en => {
+        if (!en.isIntersecting) return;
+        const el = en.target;
+        const target = +el.dataset.target;
+        const suffix = el.dataset.suffix || '';
+        if (reduceMotion) { el.textContent = target + suffix; obs.unobserve(el); return; }
+        let n = 0; const step = Math.max(1, Math.round(target / 28));
+        const tick = () => { n = Math.min(target, n + step); el.textContent = n + suffix; if (n < target) requestAnimationFrame(tick); };
+        tick(); obs.unobserve(el);
+      });
+    }, { threshold: 0.5 });
+    counters.forEach(c => countObserver.observe(c));
+
+    /* ---------- Résumé modal ---------- */
+    const rModal = document.getElementById('resume-modal');
+    const rClose = document.getElementById('resume-close');
+    let rLastFocused = null;
+
+    function getFocusable(scope) {
+      return Array.from(scope.querySelectorAll('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'))
+        .filter(el => el.offsetParent !== null);
+    }
+    function openResume() {
+      rLastFocused = document.activeElement;
+      // close mobile menu if it's open
+      menu.classList.add('hidden');
+      navToggle.setAttribute('aria-expanded', 'false');
+      rModal.classList.remove('hidden');
+      rModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      rClose.focus();
+      document.addEventListener('keydown', rKeydown);
+    }
+    function closeResume() {
+      rModal.classList.add('hidden');
+      rModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      document.removeEventListener('keydown', rKeydown);
+      if (rLastFocused) rLastFocused.focus();
+    }
+    function rKeydown(e) {
+      if (e.key === 'Escape') { closeResume(); return; }
+      if (e.key === 'Tab') {
+        const f = getFocusable(rModal.querySelector('[role="dialog"]'));
+        if (!f.length) return;
+        const first = f[0], last = f[f.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    }
+    document.querySelectorAll('[data-resume-open]').forEach(btn =>
+      btn.addEventListener('click', e => { e.preventDefault(); openResume(); }));
+    rClose.addEventListener('click', closeResume);
+    rModal.querySelector('.modal-backdrop').addEventListener('click', closeResume);
+
+    /* ---------- Init ---------- */
+    render('all');
+  })();
+  </script>
+</body>
+</html>
