@@ -171,7 +171,7 @@
 
       <h1 class="reveal mt-6 font-display font-semibold leading-[0.98] tracking-tight text-[clamp(2.6rem,8vw,5.6rem)]">
         I find what's broken<span class="text-accent">.</span><br />
-        And I prove it<span class="text-accent">.</span>
+        And I improve it<span class="text-accent">.</span>
       </h1>
 
       <div class="reveal mt-8 grid md:grid-cols-[1.4fr_1fr] gap-8 md:gap-12 items-end">
@@ -212,7 +212,7 @@
         <span class="mx-1 h-5 w-px bg-line hidden sm:block" aria-hidden="true"></span>
 
         <!-- TODO: replace placeholder profile URLs -->
-        <a href="https://linkedin.com/in/ousbayaa" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn profile (opens in new tab)" class="w-10 h-10 grid place-items-center rounded-full border border-line hover:border-ink transition-colors">
+        <a href="https://linkedin.com/in/ous-bayaa" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn profile (opens in new tab)" class="w-10 h-10 grid place-items-center rounded-full border border-line hover:border-ink transition-colors">
           <svg class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4.98 3.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM3 9h4v12H3zM9 9h3.8v1.7h.05c.53-1 1.83-2.05 3.76-2.05C20.4 8.65 22 10.9 22 14.4V21h-4v-5.8c0-1.4 0-3.2-2-3.2s-2.3 1.5-2.3 3.1V21H9z"/></svg>
         </a>
         <a href="https://github.com/ousbayaa" target="_blank" rel="noopener noreferrer" aria-label="GitHub profile (opens in new tab)" class="w-10 h-10 grid place-items-center rounded-full border border-line hover:border-ink transition-colors">
@@ -409,15 +409,17 @@
                 <p id="e-msg" class="err-msg font-mono text-[12px] text-accent">Tell me a little about the role.</p>
               </div>
 
+                           <!-- Honeypot: hidden from humans, catches bots -->
+              <input type="checkbox" id="botcheck" name="botcheck" class="hidden" style="display:none !important" tabindex="-1" aria-hidden="true" autocomplete="off" />
+
               <button id="form-submit" type="button"
-                class="w-full bg-accent text-paper font-mono text-sm py-3.5 rounded-full hover:opacity-90 transition-opacity">
+                class="w-full bg-accent text-paper font-mono text-sm py-3.5 rounded-full hover:opacity-90 transition-opacity disabled:opacity-60 disabled:cursor-not-allowed">
                 Send message
               </button>
               <p id="form-result" class="font-mono text-[13px] text-center hidden" role="status" aria-live="polite"></p>
             </div>
             <p class="mt-4 font-mono text-[11px] text-muted leading-relaxed">
-              <!-- TODO: wire to Formspree / Web3Forms / your backend. Currently validates only. -->
-              Note: connect this to your form handler before going live.
+              Straight to my inbox — I usually reply within a day.
             </p>
           </div>
         </div>
@@ -431,7 +433,7 @@
     <div class="max-w-content mx-auto px-5 sm:px-8 py-10 flex flex-col sm:flex-row gap-4 items-center justify-between font-mono text-[12px] text-muted">
       <p>© <span id="year"></span> Ous Bayaa · Santa Monica, CA</p>
       <div class="flex items-center gap-5">
-        <a href="https://linkedin.com/in/ousbayaa" target="_blank" rel="noopener noreferrer" class="hover:text-accent transition-colors">LinkedIn</a>
+        <a href="https://linkedin.com/in/ous-bayaa" target="_blank" rel="noopener noreferrer" class="hover:text-accent transition-colors">LinkedIn</a>
         <a href="https://github.com/ousbayaa" target="_blank" rel="noopener noreferrer" class="hover:text-accent transition-colors">GitHub</a>
         <a href="mailto:ousbayaa@icloud.com" class="hover:text-accent transition-colors">Email</a>
       </div>
@@ -791,24 +793,75 @@
       input.addEventListener('blur', () => { if (input.value.trim()) validateField(field); });
     });
 
-    document.getElementById('form-submit').addEventListener('click', () => {
+    // ── Paste your free Web3Forms access key here (get one in 30s at https://web3forms.com) ──
+    const WEB3FORMS_ACCESS_KEY = 'd3a18a7b-9f0b-45f7-b6d4-763ce243894c';
+
+    const submitBtn = document.getElementById('form-submit');
+    const result = document.getElementById('form-result');
+
+    async function submitForm() {
       let allOk = true;
       fields.forEach(field => {
         const ok = validateField(field);
         if (!ok) { field.classList.add('invalid'); allOk = false; }
       });
-      const result = document.getElementById('form-result');
       result.classList.remove('hidden');
-      if (allOk) {
-        result.textContent = '✓ Looks good — connect a form handler to actually send.';
-        result.style.color = 'var(--gold)';
-      } else {
+
+      if (!allOk) {
         result.textContent = 'Please fix the highlighted fields.';
         result.style.color = 'var(--accent)';
         const firstBad = fields.find(f => f.classList.contains('invalid'));
         if (firstBad) firstBad.querySelector('input, textarea').focus();
+        return;
       }
-    });
+
+      if (!WEB3FORMS_ACCESS_KEY || WEB3FORMS_ACCESS_KEY.indexOf('YOUR-') === 0) {
+        result.textContent = 'Add your Web3Forms access key in the code to start receiving messages.';
+        result.style.color = 'var(--gold)';
+        return;
+      }
+
+      const botField = document.getElementById('botcheck');
+      const payload = {
+        access_key: WEB3FORMS_ACCESS_KEY,
+        subject: 'New message from your portfolio',
+        from_name: 'Portfolio contact form',
+        name: document.getElementById('f-name').value.trim(),
+        email: document.getElementById('f-email').value.trim(),
+        message: document.getElementById('f-msg').value.trim(),
+        botcheck: botField ? botField.checked : false,
+      };
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Sending…';
+      result.textContent = '';
+
+      try {
+        const res = await fetch('https://api.web3forms.com/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (data.success) {
+          result.textContent = '\u2713 Thanks — your message is on its way. I\u2019ll be in touch soon.';
+          result.style.color = 'var(--gold)';
+          ['f-name', 'f-email', 'f-msg'].forEach(id => document.getElementById(id).value = '');
+          fields.forEach(f => f.classList.remove('valid', 'invalid'));
+        } else {
+          result.textContent = 'Something went wrong — please email me directly instead.';
+          result.style.color = 'var(--accent)';
+        }
+      } catch (e) {
+        result.textContent = 'Network hiccup — please email me directly instead.';
+        result.style.color = 'var(--accent)';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Send message';
+      }
+    }
+
+    submitBtn.addEventListener('click', submitForm);
 
     /* ---------- Scroll reveal + stat counters ---------- */
     const revealObserver = new IntersectionObserver((entries, obs) => {
